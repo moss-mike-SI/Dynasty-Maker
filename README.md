@@ -4,7 +4,7 @@ A local-first fantasy hockey GM assistant for one ESPN league. It measures how s
 
 **Scope: the 2026-27 season only.** Everything here is about winning this year. Keeper planning for next season is deliberately left out for now, see [Later](#later).
 
-**Status: specification only. No code exists yet.** This README is the build spec. Coding agents working in this repo should read all of it before writing anything, then follow [Build order](#build-order).
+**Status: skeleton only.** The folders, configuration and placeholder modules exist, the API answers a health check, and the web app shows six empty pages. No GM logic is built yet. This README is the build spec. Coding agents working in this repo should read all of it before writing anything, then follow [Build order](#build-order) from work package 1.
 
 ## What it must answer
 
@@ -22,9 +22,10 @@ A local-first fantasy hockey GM assistant for one ESPN league. It measures how s
 5. **League rules are configuration.** Scoring, roster slots and schedule rules live in `config/league.yaml`. Never hardcode them.
 6. **Every result is stamped** with `as_of` (date of the newest data used) and `weights_version`.
 7. **Deterministic.** Same data and same weights give the same output. Every simulation takes an explicit seed.
-8. **One source of logic.** The agent tools and the UI call the same functions in `dynasty/tools.py`. Neither contains valuation logic.
+8. **One source of logic.** The agent, the API and the web app all go through the functions in `dynasty/tools.py`. The API only passes requests on, and the browser never computes a number.
 9. **Stay inside the listed stack.** Adding a dependency needs a stated reason in the pull request.
 10. **Build in order.** Do not start a work package until the acceptance checks of the ones it depends on pass.
+11. **The API is local only.** It has no login, so it listens on `127.0.0.1` and is never exposed to a network.
 
 ## Architecture
 
@@ -40,8 +41,9 @@ flowchart LR
   DB --> FIT[refit and backtest] --> W
   ENG --> TOOLS[Tool functions]
   TOOLS --> AGENT[Agent loop on Ollama]
-  TOOLS --> UI[Streamlit UI]
-  AGENT --> UI
+  TOOLS --> API[FastAPI on 127.0.0.1]
+  AGENT --> API
+  API --> UI[React web app]
 ```
 
 ## Tech stack
@@ -56,47 +58,85 @@ flowchart LR
 | Modelling | numpy, scipy, scikit-learn | |
 | Schemas and settings | pydantic v2, pydantic-settings | Config, `.env`, weights file, every tool input and output |
 | CLI | Typer | Entry point `dynasty` |
-| UI | Streamlit | Phase 2, see [User interface](#user-interface) |
-| Quality | ruff, pytest | |
+| API | FastAPI, uvicorn | Hands the tools and the agent to the web app. Started with `dynasty serve` |
+| UI | React, TypeScript, Vite | In `web/`. Phase 2, see [User interface](#user-interface) |
+| Quality | ruff, pytest; oxlint and `tsc` for the web app | |
 | CI | GitHub Actions | See [Data updates and CI/CD](#data-updates-and-cicd) |
+
+Two notes on the stack:
+
+- All logic stays in Python. The web app is a static site that talks to the API, so no full-stack JavaScript framework such as Next.js is used.
+- `pyproject.toml` lists only what the code imports so far (FastAPI, uvicorn, Typer). Add the others from this table with `uv add` when a work package first needs them.
 
 ## Repository layout
 
+Every file below exists. Python modules marked with a work package number hold only a one-line description until that package is built.
+
 ```text
+pyproject.toml         Python project, dependencies, ruff and pytest settings
+uv.lock                pinned Python dependencies
+.env.example           names of the required secrets, no values
 config/
   league.yaml          league rules (scoring, slots, schedule)
-  settings.yaml        model name, agent limits, tier thresholds
+  settings.yaml        model name, agent limits, thresholds
   teams.csv            each NHL team's full name, ESPN code and NHL code
   player_aliases.csv   manual fixes for player matching
-.env.example           names of the required secrets, no values
 dynasty/
-  config.py            pydantic models for config and .env
-  db.py                DuckDB connection and schema migrations
-  identity.py          player keys and the one resolver every source uses
-  ingest/              nhl.py, espn.py, league_csv.py, projections_csv.py, injuries.py
-  scoring.py           stat line to fantasy points
-  projections.py       player projections
-  valuation.py         replacement level, player value
-  lineup.py            schedule-aware daily lineups
-  roster.py            roster strength
-  league.py            versus the field, season simulation, tiers
-  trades.py            trade evaluation, targets, free agents
-  weights.py           load, validate, refit, promote
-  backtest.py          walk-forward evaluation
-  tools.py             the functions the agent and UI call
-  agent/               loop.py, prompts.py, schemas.py
-  cli.py
-ui/                    Streamlit app (phase 2)
-weights/               versioned weights JSON plus current.json
+  cli.py               the `dynasty` command: `version`, `serve`
+  api/app.py           FastAPI app: `/api/health` now, the rest in work package 9
+  config.py            pydantic models for config and .env (1)
+  db.py                DuckDB connection and schema migrations (1)
+  identity.py          player keys and the one resolver every source uses (1)
+  scoring.py           stat line to fantasy points (1)
+  ingest/              league_csv.py (1), nhl.py, projections_csv.py, injuries.py (2), espn.py (3)
+  projections.py       player projections (4)
+  backtest.py          walk-forward evaluation (4)
+  weights.py           load and validate (4), refit and promote (8)
+  lineup.py            schedule-aware daily lineups (5)
+  valuation.py         replacement level, player value (5)
+  roster.py            roster strength (5)
+  league.py            versus the field, season simulation, tiers (5)
+  trades.py            trade evaluation, targets, free agents (6)
+  tools.py             the functions the agent and the API call (7)
+  agent/               loop.py, prompts.py, schemas.py (7)
+web/                   React app (Vite, TypeScript)
+  src/App.tsx          page shell and API status
+  src/pages.ts         the six pages
+  src/api.ts           calls to the API
+  vite.config.ts       forwards /api to the Python API during development
+weights/               versioned weights JSON plus current.json (empty until work package 4)
 tests/
-  fixtures/            synthetic 12-team league, recorded API responses
+  test_api.py, test_cli.py
+  fixtures/            synthetic 12-team league and synthetic source files
   golden/              agent evaluation questions
 .github/workflows/
+  ci.yml               lint, tests and web build
 ```
+
+## Running it
+
+Use two terminals, both starting in the repo root.
+
+```text
+uv sync
+uv run dynasty serve
+```
+
+```text
+cd web
+npm install
+npm run dev
+```
+
+The first starts the API on `http://127.0.0.1:8000`. The second starts the web app on `http://localhost:5173` and forwards `/api` to the API. The page header shows whether the API is reachable.
+
+Checks, the same ones CI runs: `uv run ruff check`, `uv run ruff format --check` and `uv run pytest` in the root; `npm run lint` and `npm run build` in `web/`.
+
+**Move the repo out of OneDrive before installing.** `uv sync` and `npm install` create `.venv` and `web/node_modules`, thousands of small files that OneDrive will try to upload and may lock while tools are using them.
 
 ## League configuration
 
-This is the league the project is built for. Work package 1 creates `config/league.yaml` with exactly this content.
+This is the league the project is built for. `config/league.yaml` holds exactly this content.
 
 ```yaml
 platform: espn
@@ -387,7 +427,7 @@ All in `dynasty/tools.py`, each with pydantic input and output models. `team` de
 
 One constraint drives this design: GitHub-hosted runners cannot reach your local data, your ESPN cookies or your local Ollama. So the pipeline is split.
 
-**On GitHub (every push and pull request), `ci.yml`:** `uv sync`, `ruff check`, `pytest` against fixtures. No network, no credentials, no Ollama.
+**On GitHub (every push and pull request), `ci.yml`:** two jobs. Python: `uv sync --locked`, `ruff check`, `ruff format --check`, `pytest` against fixtures. Web: `npm ci`, `npm run lint`, `npm run build`. No calls to data sources, no credentials, no Ollama.
 
 **On GitHub (when `weights/**` changes), `weights.yml`:** validate the file against its schema and rerun the backtest on fixture data. Fail on schema errors or a regression.
 
@@ -402,13 +442,22 @@ One constraint drives this design: GitHub-hosted runners cannot reach your local
 | Recompute projections | `dynasty project` | Automatically after any of the above |
 | Refit weights | `dynasty refit` then `dynasty promote` | Weekly, or on demand |
 | Agent evaluation | `pytest -m ollama` | Before changing the model or the prompts |
-| Deploy | `git pull`, `uv sync`, `dynasty migrate`, restart the UI | After a merge to `main` |
+| Deploy | `git pull`, `uv sync`, `dynasty migrate`, then `npm ci` and `npm run build` in `web/`, restart `dynasty serve` | After a merge to `main` |
 
 A GitHub self-hosted runner on this PC could automate the local steps, but **only if the repository is private.** On a public repository a stranger's pull request could run code on this machine. Until visibility is decided, use Task Scheduler.
 
 ## User interface
 
-Phase 2. Built only after work package 7 passes, so the tools it depends on are stable. Streamlit, with no logic of its own:
+Phase 2. A React and TypeScript app in `web/`, built with Vite, talking to a FastAPI backend in `dynasty/api/`. It holds no GM logic: every number on screen comes from the API. The shell, its six empty pages and the API health check exist now.
+
+**The API (work package 9)**, built only after work package 7 passes so the tools are stable:
+
+- One route per tool, `POST /api/tools/<tool_name>`, taking and returning that tool's pydantic models unchanged.
+- `POST /api/chat` runs the agent and streams events as they happen (tool call, tool result, answer text) as server-sent events.
+- `POST /api/refresh/<source>` and `POST /api/upload/<kind>` run the same functions as the CLI's `refresh` and `ingest` commands.
+- `dynasty serve` also serves the built web app from `web/dist`, so daily use is one command and one address.
+
+**The pages (work package 10)**:
 
 - **League:** standings, power rankings, playoff odds, tiers
 - **My team:** the team report and this week's matchup preview
@@ -419,9 +468,11 @@ Phase 2. Built only after work package 7 passes, so the tools it depends on are 
 
 ## Build order
 
+Work package 0 is done: lint, tests and the web build pass on this machine. Its CI workflow has not run yet, because nothing has been pushed.
+
 | # | Work package | Depends on | Done when |
 |---|---|---|---|
-| 0 | Scaffold: `pyproject.toml`, package skeleton, `.gitignore`, `.env.example`, ruff, pytest, `ci.yml` | none | `uv run ruff check` and `uv run pytest` pass locally and in CI; git ignores `.env`, `*.xlsm`, `fantasy_hockey_projections_*.csv` and `nhl_injuries_*.csv` |
+| 0 | Scaffold: `pyproject.toml`, package skeleton, API health route, web shell, `.gitignore`, `.env.example`, `ci.yml` | none | `uv run ruff check`, `uv run pytest`, `npm run lint` and `npm run build` pass locally and in CI; git ignores `.env`, `*.xlsm`, `fantasy_hockey_projections_*.csv` and `nhl_injuries_*.csv` |
 | 1 | Config models, `league.yaml`, scoring, DuckDB schema, player identity, CSV ingest, synthetic 12-team fixture league | 0 | Both worked scoring examples pass; fixtures load; a bad file loads nothing and reports row errors; re-ingest is a no-op; `Sam Montembeault` and `Samuel Montembeault` resolve to one key; an F and a D with the same name resolve to two; a player who changes team or moves between C and LW keeps his key |
 | 2 | NHL stats and schedule fetch; projections file and injury report ingest | 1 | Tests run against recorded responses; hits and blocks are loaded per game; a rerun adds no duplicates; points recomputed from the synthetic projections file match its `League_Proj_FPts` to 0.01; the real projections file and injury report load locally, and `dynasty players review` shows no unexplained pair |
 | 3 | ESPN adapter | 1 | Tests pass with no credentials; a live run loads 12 teams with every rostered player resolved to exactly one key; a settings mismatch stops the run |
@@ -430,7 +481,8 @@ Phase 2. Built only after work package 7 passes, so the tools it depends on are 
 | 6 | Trade evaluation, trade targets, free agents | 5 | A trade and its reverse give opposite deltas; a fifth goalie is flagged; free agent results show acquisitions remaining out of two |
 | 7 | Tools, agent loop, golden questions, model selection | 6 | At least 18 of 20 golden questions call the right tools and quote only numbers from tool output |
 | 8 | Refit, promote, `weights.yml`, scheduled refresh | 4 | A worse candidate is refused; a better one is promoted; rollback works |
-| 9 | Streamlit UI | 7 | Every page renders against the fixture league |
+| 9 | API: tool routes, chat stream, refresh and upload routes, serving the built web app | 7 | Every tool is reachable over HTTP with the same models as `tools.py`; chat streams tool calls and text in order; an upload reaches the same ingest path as the CLI; the server listens on `127.0.0.1` only |
+| 10 | React UI | 9 | Every page renders against the fixture league; `npm run lint` and `npm run build` pass; no page computes a number itself |
 
 ## Open decisions
 

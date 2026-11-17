@@ -1,0 +1,32 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Third-party data: never committed (see "Ground rules for agents" in README.md)
+*.xlsm
+*.xlsx
+fantasy_hockey_projections_*.csv
+nhl_injuries_*.csv
+
+# Runtime data (belongs in DYNASTY_DATA_DIR, outside the repo)
+/data/
+*.duckdb
+*.duckdb.wal
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+build/
+dist/
+*.egg-info/
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db

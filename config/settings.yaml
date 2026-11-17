@@ -1,0 +1,27 @@
+# Starting values, not tuned. Work packages replace them as noted.
+
+agent:
+  model: null              # set by the bake-off in work package 7; must list "tools" in `ollama show`
+  max_rounds: 8
+  temperature: 0.1
+
+projection:
+  baseline: csg            # csg | model
+
+# Results carry a warning once a source is older than this many days.
+stale_after_days:
+  nhl_stats: 2
+  espn_league: 2
+  injuries: 2
+
+# A refit candidate is accepted if its backtest error is at most current * (1 + tolerance).
+refit:
+  tolerance: 0.0
+
+# Tiers by simulated playoff odds.
+tiers:
+  contender_min_playoff_odds: 0.60
+  rebuild_max_playoff_odds: 0.20
+
+api:
+  port: 8000

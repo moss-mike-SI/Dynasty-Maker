@@ -1,0 +1,89 @@
+:root {
+  color-scheme: light dark;
+  --text: light-dark(#1f2430, #e6e8ee);
+  --muted: light-dark(#5b6272, #9aa1b2);
+  --bg: light-dark(#ffffff, #14161c);
+  --border: light-dark(#d9dce3, #2c303b);
+  --accent: light-dark(#0b5cad, #7db7ff);
+  --ok: light-dark(#1a7f37, #56d364);
+  --bad: light-dark(#b42318, #ff8a80);
+
+  font: 16px/1.5 system-ui, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+body {
+  margin: 0;
+}
+
+#root {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.25rem;
+}
+
+.api {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.api-up {
+  color: var(--ok);
+}
+
+.api-down {
+  color: var(--bad);
+}
+
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 1rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+nav button {
+  padding: 0.5rem 0.75rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+nav button:hover {
+  color: var(--text);
+}
+
+nav button[aria-current='page'] {
+  border-bottom-color: var(--accent);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.todo {
+  color: var(--muted);
+  font-style: italic;
+}

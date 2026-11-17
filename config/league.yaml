@@ -1,0 +1,23 @@
+platform: espn
+espn_season: 2027           # ESPN names a season by the year it ends: 2027 is 2026-27
+teams: 12
+format: points
+matchup: h2h
+lineup: daily               # each player locks at his own game time
+roster:
+  slots: {F: 9, D: 5, UTIL: 1, G: 2, BENCH: 5, IR: 1}
+  max_goalies: 4
+scoring:
+  skater: {G: 3, A: 2, PPP: 0.5, SHP: 1, GWG: 0.5, HAT: 0.5, SOG: 0.2, HIT: 0.3, BLK: 0.6}
+  goalie: {W: 2, L: -0.25, OTL: 0.5, GA: -1, SV: 0.2, SO: 0.5}
+transactions:
+  acquisitions_per_matchup: 2
+  waiver_days: 1
+  trade_deadline: 2027-02-26T12:00
+schedule:
+  matchup_length_weeks: 1
+  regular_season_matchups: 25
+  playoff_teams: 4
+  playoff_rounds: 2
+  ties_stand: true
+  seeding_tiebreaker: head_to_head
