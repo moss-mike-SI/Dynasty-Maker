@@ -75,7 +75,7 @@ export function assessLeague(league, teamId) {
   const categories = league.categories.map(category => {
     const values = league.teams.map(team => total(team, category));
     const value = values[league.teams.indexOf(selected)];
-    const mean = values.reduce((sum, current) => sum + current, 0) / values.length;
+    const mean = values[0] + values.reduce((sum, current) => sum + (current - values[0]), 0) / values.length;
     const deviation = Math.sqrt(values.reduce((sum, current) => sum + (current - mean) ** 2, 0) / values.length);
     const direction = category.direction === 'higher' ? 1 : -1;
     return {

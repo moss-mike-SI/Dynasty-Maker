@@ -34,6 +34,7 @@ export async function createApp({
 } = {}) {
   let league;
   let updatedAt = null;
+  let saveQueue = Promise.resolve();
   try {
     league = validateLeague(JSON.parse(await readFile(dataFile, 'utf8')));
   } catch (error) {
@@ -80,17 +81,20 @@ export async function createApp({
           let next;
           try { next = validateLeague(body); }
           catch (error) { throw httpError(400, error.message); }
-          await mkdir(path.dirname(dataFile), { recursive: true });
-          const temporary = `${dataFile}.${randomUUID()}.tmp`;
-          try {
-            await writeFile(temporary, JSON.stringify(next, null, 2), { mode: 0o600, flag: 'wx' });
-            await rename(temporary, dataFile);
-          } finally {
-            await rm(temporary, { force: true });
-          }
-          league = next;
-          updatedAt = new Date().toISOString();
-          return json(200, { league, updatedAt, model });
+          const saved = await (saveQueue = saveQueue.catch(() => {}).then(async () => {
+            await mkdir(path.dirname(dataFile), { recursive: true });
+            const temporary = `${dataFile}.${randomUUID()}.tmp`;
+            try {
+              await writeFile(temporary, JSON.stringify(next, null, 2), { mode: 0o600, flag: 'wx' });
+              await rename(temporary, dataFile);
+              league = next;
+              updatedAt = new Date().toISOString();
+              return { league, updatedAt, model };
+            } finally {
+              await rm(temporary, { force: true });
+            }
+          }));
+          return json(200, saved);
         }
         if (req.method === 'POST' && url.pathname === '/api/chat') {
           if (!body || typeof body.question !== 'string' || !body.question.trim() || body.question.length > 2000

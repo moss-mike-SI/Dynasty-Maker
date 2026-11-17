@@ -33,9 +33,11 @@ test('goalie rates use the correct denominators and lower GAA improves strength'
 
 test('ties get equal ranks and zero variance produces finite zero strength', () => {
   const league = structuredClone(demo);
-  league.teams = league.teams.slice(0, 2);
   league.categories = [league.categories[0]];
-  league.teams[1].players[0].stats.goals = 42;
+  for (const team of league.teams) {
+    team.players[0].stats.goals = 0.1;
+    team.players[1].stats.goals = 0;
+  }
   const result = assessLeague(validateLeague(league), 'north');
   assert.equal(result.categories[0].rank, 1);
   assert.equal(result.categories[0].zScore, 0);

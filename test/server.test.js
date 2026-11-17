@@ -64,6 +64,20 @@ test('rejects corrupt saved data instead of silently reverting to the demo', asy
   await assert.rejects(createApp({ dataFile }), SyntaxError);
 });
 
+test('concurrent uploads keep persisted data and active context consistent', async t => {
+  const { url, dataFile } = await fixture(t);
+  const responses = await Promise.all(Array.from({ length: 10 }, (_, index) => {
+    const league = structuredClone(demo);
+    league.name = `Revision ${index}`;
+    return fetch(`${url}/api/league`, {
+      method: 'PUT', headers: jsonHeaders, body: JSON.stringify(league),
+    });
+  }));
+  assert.ok(responses.every(response => response.status === 200));
+  const current = await (await fetch(`${url}/api/league`)).json();
+  assert.deepEqual(current.league, JSON.parse(await readFile(dataFile, 'utf8')));
+});
+
 test('rejects foreign origins, DNS rebinding hosts, invalid JSON, and oversized uploads', async t => {
   const { url } = await fixture(t);
   assert.equal((await fetch(`${url}/api/league`, {
@@ -95,6 +109,11 @@ test('Ollama receives current projections and deterministic assessment', async t
       return Response.json({ message: { content: 'Prioritize hits without sacrificing assists.' } });
     },
   });
+  const updated = structuredClone(demo);
+  updated.teams[0].players[0].stats.goals = 50;
+  assert.equal((await fetch(`${url}/api/league`, {
+    method: 'PUT', headers: jsonHeaders, body: JSON.stringify(updated),
+  })).status, 200);
   const response = await fetch(`${url}/api/chat`, {
     method: 'POST', headers: jsonHeaders,
     body: JSON.stringify({ teamId: 'north', question: 'Where am I weakest?' }),
@@ -104,8 +123,8 @@ test('Ollama receives current projections and deterministic assessment', async t
   const context = JSON.parse(prompt.messages[1].content);
   assert.equal(context.assessment.teamId, 'north');
   assert.equal(context.league.teams.length, 3);
-  assert.equal(context.league.teams[0].projections.goals, 52);
-  assert.deepEqual(context.roster, demo.teams[0].players);
+  assert.equal(context.league.teams[0].projections.goals, 62);
+  assert.deepEqual(context.roster, updated.teams[0].players);
   assert.equal(context.question, 'Where am I weakest?');
   assert.equal(prompt.stream, false);
   assert.match(prompt.messages[0].content, /untrusted/);
