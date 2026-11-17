@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dynasty Maker · Hockey GM</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <main>
+    <header><span class="eyebrow">LOCAL-FIRST · FANTASY HOCKEY</span><h1>Dynasty Maker</h1>
+      <p>Your roster. The field. A clearer next move.</p></header>
+    <section aria-labelledby="league-title">
+      <h2 id="league-title">League workspace</h2>
+      <p id="league-info">Loading sample league…</p>
+      <div class="controls">
+        <label>Your team<select id="team"></select></label>
+        <form id="upload-form">
+          <label>Update league data (JSON, max 1 MiB)<input id="upload" type="file" accept=".json,application/json" required></label>
+          <button type="submit">Upload data</button>
+        </form>
+      </div>
+      <p class="muted">Starts with fictional demo projections. Upload your whole league for a meaningful comparison.
+        Uploads replace local context; they do not train model weights.</p>
+    </section>
+    <section aria-labelledby="assessment-title">
+      <h2 id="assessment-title">Roster vs. the field</h2>
+      <p id="summary"></p>
+      <div class="table-wrap"><table>
+        <caption>Projected category strength · all supplied players included</caption>
+        <thead><tr><th scope="col">Category</th><th scope="col">Your projection</th><th scope="col">League mean</th><th scope="col">Rank</th><th scope="col">Strength (z)</th></tr></thead>
+        <tbody id="categories"></tbody>
+      </table></div>
+      <p class="muted">Positive strength is better, including lower-is-better categories. Equal category weights; not a championship probability.</p>
+    </section>
+    <section aria-labelledby="agent-title">
+      <h2 id="agent-title">Ask your GM agent</h2>
+      <p id="model" class="muted"></p>
+      <form id="chat-form">
+        <label for="question">What should we improve?</label>
+        <textarea id="question" rows="3" maxlength="2000" required>Assess my roster against the field. What are my top two priorities?</textarea>
+        <button id="ask" type="submit">Ask local agent</button>
+      </form>
+      <p id="answer" aria-live="polite">Optional: start Ollama to get written advice. Category analysis works without it.</p>
+    </section>
+    <p id="status" role="status" aria-live="polite"></p>
+  </main>
+</body>
+</html>

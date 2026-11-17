@@ -1,0 +1,37 @@
+{
+  "name": "Fictional demo league — not current NHL projections",
+  "categories": [
+    { "key": "goals", "label": "Goals", "direction": "higher", "aggregation": "sum" },
+    { "key": "assists", "label": "Assists", "direction": "higher", "aggregation": "sum" },
+    { "key": "hits", "label": "Hits", "direction": "higher", "aggregation": "sum" },
+    { "key": "wins", "label": "Goalie wins", "direction": "higher", "aggregation": "sum" },
+    { "key": "savePct", "label": "Save percentage", "direction": "higher", "aggregation": "weightedAverage", "weight": "shotsAgainst" },
+    { "key": "gaa", "label": "Goals-against average", "direction": "lower", "aggregation": "weightedAverage", "weight": "minutes" }
+  ],
+  "teams": [
+    {
+      "id": "north", "name": "Northern Lights",
+      "players": [
+        { "id": "n1", "name": "Alex North", "position": "C", "stats": { "goals": 40, "assists": 55, "hits": 40 } },
+        { "id": "n2", "name": "Sam Frost", "position": "D", "stats": { "goals": 12, "assists": 48, "hits": 80 } },
+        { "id": "n3", "name": "Robin Ice", "position": "G", "stats": { "wins": 32, "savePct": 0.918, "shotsAgainst": 1600, "gaa": 2.4, "minutes": 3200 } }
+      ]
+    },
+    {
+      "id": "harbor", "name": "Harbor Hawks",
+      "players": [
+        { "id": "h1", "name": "Casey Bay", "position": "LW", "stats": { "goals": 32, "assists": 40, "hits": 180 } },
+        { "id": "h2", "name": "Morgan Reef", "position": "D", "stats": { "goals": 10, "assists": 35, "hits": 150 } },
+        { "id": "h3", "name": "Taylor Tide", "position": "G", "stats": { "wins": 28, "savePct": 0.909, "shotsAgainst": 1500, "gaa": 2.8, "minutes": 3000 } }
+      ]
+    },
+    {
+      "id": "metro", "name": "Metro Blades",
+      "players": [
+        { "id": "m1", "name": "Jamie Steel", "position": "RW", "stats": { "goals": 45, "assists": 35, "hits": 100 } },
+        { "id": "m2", "name": "Drew Rail", "position": "D", "stats": { "goals": 15, "assists": 40, "hits": 100 } },
+        { "id": "m3", "name": "Avery Slate", "position": "G", "stats": { "wins": 35, "savePct": 0.914, "shotsAgainst": 1700, "gaa": 2.6, "minutes": 3400 } }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "name": "dynasty-maker",
+  "version": "1.0.0",
+  "description": "Local-first fantasy hockey GM assistant with optional Ollama commentary",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test",
+    "check": "node --check src/server.js && node --check src/league.js && node --check public/app.js",
+    "validate-data": "node src/league.js examples/league.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/moss-mike-SI/Dynasty-Maker.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "Apache-2.0",
+  "type": "module"
+}
